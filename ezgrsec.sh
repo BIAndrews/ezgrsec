@@ -6,11 +6,23 @@
 #
 #	https://github.com/BIAndrews/ezgrsec
 
-# get the latest versions and releases from http://grsecurity.net/download.php , is it possible to automate this?
-DEF_GRSECV=3.1
-DEF_GRSECRELEASE=201504051405
-DEF_GRADMNRELEASE=201503211320
-DEF_KERNELV=3.14.37
+# get the latest versions and releases from http://grsecurity.net/download.php , is it possible to automate this? YES!
+DEF_GRSEC_TYPE=stable
+latest_gradm=`wget -qO- http://grsecurity.net/download.php|grep stable/|sed -e's/.*href="stable//' -e's/".*//'|grep gradm`
+if [ $DEF_GRSEC_TYPE == "stable" ]; then
+ latest_grsec=`wget -qO- http://grsecurity.net/download.php|grep stable/|sed -e 's/\s\+/\n/g'|grep stable/|head -1|sed -e's/.*stable\///' -e's/"//'`
+ DEF_GRSECV=`echo $latest_grsec|awk -F- '{print $2}'`
+ DEF_GRSECRELEASE=`echo $latest_grsec|awk -F- '{print $4}'|sed -e's/\..*//'`;
+ DEF_GRADMNRELEASE=`echo $latest_gradm|awk -F- '{print $3}'|sed -e's/\..*//'`;
+ DEF_KERNELV=`echo $latest_grsec|awk -F- '{print $3}'`;
+fi
+if [ $DEF_GRSEC_TYPE == "test" ]; then
+ latest_grsec=`wget -qO- http://grsecurity.net/download.php|grep test/|sed -e's/.*href="test//' -e's/".*//'|head -1`
+ DEF_GRSECV=`echo $latest_grsec|awk -F- '{print $2}'`
+ DEF_GRSECRELEASE=`echo $latest_grsec|awk -F- '{print $4}'|sed -e's/\..*//'`;
+ DEF_GRADMNRELEASE=`echo $latest_gradm|awk -F- '{print $3}'|sed -e's/\..*//'`;
+ DEF_KERNELV=`echo $latest_grsec|awk -F- '{print $3}'`;
+fi
 # get from https://pax.grsecurity.net/
 DEF_PAXV=0.9
 # defaults
@@ -299,7 +311,13 @@ fi
 PAXURL="http://pax.grsecurity.net/paxctl-$PAXV.tar.gz"
 GRSECURL="http://grsecurity.net/stable/grsecurity-$GRSECV-$KERNELV-$GRSECRELEASE.patch"
 GRADMNURL="http://grsecurity.net/stable/gradm-$GRSECV-$GRADMNRELEASE.tar.gz"
-KERNELURL="https://www.kernel.org/pub/linux/kernel/v3.x/linux-$KERNELV.tar.xz"
+# since the test grsec patch is for the v4.x kernel:
+if [ `echo $KERNELV|head -c1` == 3 ]; then
+ KERNELURL="https://www.kernel.org/pub/linux/kernel/v3.x/linux-$KERNELV.tar.xz"
+fi
+if [ `echo $KERNELV|head -c1` == 4 ]; then
+ KERNELURL="https://www.kernel.org/pub/linux/kernel/v4.x/linux-$KERNELV.tar.xz"
+fi
 KERNELTAR="`basename $KERNELURL`"
 CORES=$((`cat /proc/cpuinfo | grep processor | wc -l` * 2))
 
